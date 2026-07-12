@@ -34,7 +34,9 @@ The lane is a different model family than the architect, so every diff gets genu
 
 The lane's planning phase is also a spec check. If it returns `STATUS: spec-gap`, Sol judged the spec defective and refused to build against it — that is a signal to fix the spec (or consult `fable-advisor`), never to re-send the same spec with firmer wording.
 
-If the lane returns `unavailable` or `timeout`, say so explicitly in your report — never quietly absorb a substitution. If the codex CLI is unavailable entirely, implement with a Claude subagent and state the downgrade plainly.
+If the lane returns `unavailable` or `timeout`, say so explicitly in your report — never quietly absorb a substitution. There is no second implementation lane and no Claude implementation agent: if the codex CLI is missing, unauthenticated, or cannot reach the models, **stop and tell the user the implementation lane is unavailable**, with the exact error, so they can fix it. Do not implement it yourself and do not spin up a Claude subagent to do it — a cross-vendor lane that quietly becomes a Claude lane defeats the entire reason the lane exists.
+
+If the lane returns `partial`, codex ran but did not finish the job — an empty diff, a verification command that failed or does not exist, or work it abandoned mid-way. Treat it as unfinished, not as a spec defect: read the diff and the quoted evidence, decide whether the gap is a spec problem (fix the spec, re-delegate) or a lane problem (re-delegate the remainder as a fresh, narrower spec). Never report `partial` upward as done.
 
 ## The spec contract
 
