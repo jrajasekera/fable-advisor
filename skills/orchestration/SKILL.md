@@ -1,6 +1,6 @@
 ---
 name: orchestration
-description: Routing doctrine for the architect-as-orchestrator pattern — how a session running the smartest model delegates implementation to cheaper cross-vendor lanes to minimize cost. USE WHEN delegating implementation work, choosing between grok-implementer/codex-implementer lanes, writing a spec for a subagent, deciding whether to consult fable-advisor, managing session cost or token spend, or running any multi-task build where the session is the architect.
+description: Routing doctrine for the architect-as-orchestrator pattern — how a session running the smartest model delegates implementation to a cheaper cross-vendor lane to minimize cost. USE WHEN delegating implementation work, routing to the codex-implementer lane, writing a spec for a subagent, deciding whether to consult fable-advisor, managing session cost or token spend, or running any multi-task build where the session is the architect.
 ---
 
 # Orchestration — the architect's routing doctrine
@@ -9,7 +9,7 @@ The session is the architect: it owns requirements, architecture, decomposition,
 
 ## Cost discipline — the prime directive
 
-The session model is the most expensive lane in the system, on both input and output tokens. The whole economic case for this pattern is keeping its token volume low: spend Fable on judgment, spend Sonnet on volume. Three rules follow.
+The session model is the most expensive lane in the system, on both input and output tokens. The whole economic case for this pattern is keeping its token volume low: spend Fable on judgment, spend the codex lane on volume. Three rules follow.
 
 **Emit judgment, not volume.** The architect's output is decomposition, specs, routing decisions, verdicts on diffs, and short reports. It does not type implementation code, test bodies, boilerplate, or config files. A code block longer than an interface signature or a few illustrative lines is a spec that hasn't been delegated yet — stop and delegate it. Fixing a lane's bug by hand is the same failure in disguise: send a corrected spec back to the cheap lane instead.
 
@@ -23,15 +23,18 @@ What stays with the architect regardless of cost: decomposition, interface desig
 
 | Lane | Producer | Invoke | Route here when |
 |---|---|---|---|
-| Routine | Grok 4.5 | `grok-implementer` agent | The spec fully determines the outcome: boilerplate, wiring, CRUD, mechanical edits, straightforward features. **Default lane.** Requires the [Grok CLI](https://x.ai/cli). |
-| Cross-vendor | GPT-5.6 Sol (high reasoning) | `codex-implementer` agent | Correctness/completeness is critical enough to want a second implementation, or as the alternative family when the grok lane is unavailable. Requires the codex CLI. |
+| Implementation | GPT-5.6 Sol (plan) → GPT-5.6 Terra (implement) | `codex-implementer` agent | All well-specified implementation work. **The only implementation lane.** Requires the [Codex CLI](https://github.com/openai/codex). |
 | Judgment | Fable 5 | `fable-advisor` agent | Not an implementation lane. See "Commitment boundaries" below. |
 
-Deciding rule: how much does the outcome depend on judgment the spec can't capture? Little → the default grok lane; you will verify anyway. A lot, and mistakes are costly → race both lanes on the same spec and pick the stronger diff, or keep that piece with the architect.
+The implementation lane is itself two-phase: Sol at high reasoning reads the code and produces a plan, then Terra at medium reasoning inherits that plan and writes the code. The architect's cost discipline applied one level down — reason once with the expensive model, let the cheap one carry the volume.
 
-Grok vs codex is not a capability ranking — it's a failure-distribution question. Both are non-Anthropic families, so either lane's output gets genuine cross-vendor review from the Claude architect; racing them buys a *third* independent perspective for one extra lane's cost.
+Deciding rule: how much does the outcome depend on judgment the spec can't capture? Little → delegate; you will verify anyway. A lot, and mistakes are costly → keep it with the architect, or settle the decision with `fable-advisor` first and *then* delegate the settled spec.
 
-If a lane returns `unavailable` or `timeout`, re-route the same spec to the other lane and say so explicitly in your report — never quietly absorb the substitution. If both CLI lanes are unavailable, implement with a Claude subagent and state the downgrade plainly.
+The lane is a different model family than the architect, so every diff gets genuine cross-vendor review for free: OpenAI produces, Claude judges.
+
+The lane's planning phase is also a spec check. If it returns `STATUS: spec-gap`, Sol judged the spec defective and refused to build against it — that is a signal to fix the spec (or consult `fable-advisor`), never to re-send the same spec with firmer wording.
+
+If the lane returns `unavailable` or `timeout`, say so explicitly in your report — never quietly absorb a substitution. If the codex CLI is unavailable entirely, implement with a Claude subagent and state the downgrade plainly.
 
 ## The spec contract
 
@@ -47,7 +50,9 @@ A spec you can't finish writing is a signal the decision isn't made yet — that
 
 ## Parallelism
 
-Independent specs (no shared files, no ordering dependency) launch as parallel agents in a single message. Sequential chains and single-file surgery stay serial. For high-stakes work, a pick-the-stronger-diff race — `grok-implementer` and `codex-implementer` on the same spec, architect judges — buys three-vendor confidence for one extra lane's cost.
+Independent specs (no shared files, no ordering dependency) launch as parallel `codex-implementer` agents in a single message. Sequential chains and single-file surgery stay serial. Each lane invocation uses `mktemp` paths, so parallel runs do not collide.
+
+For high-stakes work there is no second lane to race against — buy confidence with `fable-advisor` on the decision *before* delegating, and with your own diff review after.
 
 ## Commitment boundaries
 
