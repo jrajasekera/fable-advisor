@@ -101,6 +101,10 @@ touching 3+ files, consult the fable-advisor agent and act on its verdict.
 
 I write [**Attention Heads**](https://attentionheads.substack.com/?utm_source=github&utm_medium=readme&utm_campaign=fable-advisor) — deep, evidence-backed writing on AI, cognition, and agentic engineering. The **Agentic Engineering Field Notes** series is where I publish practical advice on the craft of using AI. [Subscribe](https://attentionheads.substack.com/subscribe?utm_source=github&utm_medium=readme&utm_campaign=fable-advisor) to get new posts to your inbox.
 
+## Credits
+
+This is a fork of [fable-advisor](https://github.com/DannyMac180/fable-advisor) by [Dan McAteer](https://github.com/DannyMac180), adapted to run a single two-phase codex implementation lane. Original work MIT licensed.
+
 ## License
 
 MIT
