@@ -108,6 +108,8 @@ GAPS: [what the caller must decide to unblock this]
 
 The fix decision belongs to the caller, not to you and not to Terra. Do not "interpret" an ambiguous spec into a guess — that is how a cheap lane builds the wrong thing confidently. If the spec is wrong at the architectural level, the caller should consult `fable-advisor`.
 
+If the plan contains **no verdict line at all** — Sol deviated, or the run was truncated by the timeout — treat it as `SPEC-PROBLEM: no verdict line found; planning phase did not complete` and return `STATUS: spec-gap` the same way. An absent verdict is never permission to proceed: phase 2 is expensive and writes to the working tree, and a plan that was never validated is exactly what the gate exists to stop.
+
 On `SPEC-OK`, continue to phase 2.
 
 ## Phase 2 — implement (Terra, medium, workspace-write)
