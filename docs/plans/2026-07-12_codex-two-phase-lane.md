@@ -47,7 +47,7 @@ is not assumed:
 
 ### 1. Fork and repoint
 
-Work lives in `jrajasekera/fable-advisor`, cloned at `~/plugins/fable-advisor`. Claude Code's
+Work lives in `jrajasekera/fable-advisor`, cloned at `~/source/fable-advisor`. Claude Code's
 marketplace is repointed at the fork so plugin updates pull from us, not upstream. `upstream` remains
 a remote so Dan's later improvements can be cherry-picked.
 
