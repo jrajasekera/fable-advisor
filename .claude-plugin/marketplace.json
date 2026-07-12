@@ -1,7 +1,7 @@
 {
   "name": "fable-advisor",
   "metadata": {
-    "description": "Model-routing patterns for Claude Code: architect-as-orchestrator with Grok 4.5 and GPT-5.6 Sol implementation lanes and a Fable 5 commitment-boundary advisor."
+    "description": "Model-routing patterns for Claude Code: architect-as-orchestrator with a two-phase GPT-5.6 (Sol plans, Terra implements) codex lane and a Fable 5 commitment-boundary advisor."
   },
   "owner": {
     "name": "Dan McAteer",
@@ -11,7 +11,7 @@
     {
       "name": "fable-advisor",
       "source": "./",
-      "description": "Architect-as-orchestrator: your session runs Claude's most capable model, routing implementation to Grok 4.5 (Grok CLI) and GPT-5.6 Sol at high reasoning (Codex) — with a commitment-boundary advisor."
+      "description": "Architect-as-orchestrator: your session runs Claude's most capable model, routing implementation to a two-phase codex lane (GPT-5.6 Sol plans at high reasoning, GPT-5.6 Terra implements) — with a commitment-boundary advisor."
     }
   ]
 }

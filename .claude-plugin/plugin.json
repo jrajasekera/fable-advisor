@@ -1,7 +1,7 @@
 {
   "name": "fable-advisor",
-  "version": "3.1.0",
-  "description": "Run your session on Claude's most capable model as a full-time architect: it writes specs and verdicts while Grok 4.5 (via the Grok CLI) and GPT-5.6 Sol at high reasoning (via Codex) do the typing. Fable-level judgment with cross-vendor implementation.",
+  "version": "4.0.0",
+  "description": "Run your session on Claude's most capable model as a full-time architect: it writes specs and verdicts while a two-phase codex lane — GPT-5.6 Sol plans, GPT-5.6 Terra implements — does the typing. Fable-level judgment with cross-vendor implementation.",
   "author": {
     "name": "Dan McAteer",
     "url": "https://github.com/DannyMac180"
@@ -15,7 +15,6 @@
     "advisor",
     "orchestration",
     "architect",
-    "grok",
     "codex"
   ]
 }

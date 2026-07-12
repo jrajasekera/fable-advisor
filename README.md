@@ -6,18 +6,17 @@ Claude Code lets every subagent run on a different model — and lets the sessio
 
 | Lane | Producer | Invocation | Route here when |
 |---|---|---|---|
-| Routine | **Grok 4.5** | `grok-implementer` agent (default) | The spec fully determines the outcome — Grok does the typing via the [Grok CLI](https://x.ai/cli) |
-| Cross-vendor | GPT-5.6 Sol (high reasoning) | `codex-implementer` agent | Correctness-critical, or you want a second independent implementation to compare |
+| Implementation | **GPT-5.6 Sol** (plans) → **GPT-5.6 Terra** (implements) | `codex-implementer` agent | All well-specified work — a two-phase codex run does the typing |
 | Judgment | Fable 5 | `fable-advisor` agent | Commitment boundaries — see below |
 
-Tokens route by volume: the expensive model emits the fewest tokens (judgment and specs), cheap lanes emit the most (code). Implementation mechanics are ~90% of a session's tokens and Grok 4.5 handles them at near-parity — so this runs far cheaper than Fable-for-everything, and every implementation comes from a *different model family* than the architect that reviews it: cross-vendor review is built into the routing, not bolted on. For high-stakes work, race `grok-implementer` and `codex-implementer` on the same spec and let the architect pick the stronger diff.
+Tokens route by volume: the expensive model emits the fewest tokens (judgment and specs), the cheap lane emits the most (code). The lane splits that again internally — Sol at high reasoning plans once, Terra at medium reasoning writes the code — so the premium is spent on thinking, not typing. Every implementation comes from a *different model family* than the architect that reviews it: cross-vendor review is built into the routing, not bolted on.
 
-The plugin ships the **orchestration skill** — the routing doctrine that teaches the session when to use each lane, the cost discipline that keeps the expensive model's own token volume minimal (emit judgment not volume, keep context lean, reason once then hand off), the five-part spec contract that makes context-free delegation safe, and the verification rules that keep cheap lanes honest.
+The plugin ships the **orchestration skill** — the routing doctrine that teaches the session when to use each lane, the cost discipline that keeps the expensive model's own token volume minimal (emit judgment not volume, keep context lean, reason once then hand off), the five-part spec contract that makes context-free delegation safe, and the verification rules that keep the cheap lane honest.
 
 ## Install
 
 ```
-claude plugin marketplace add DannyMac180/fable-advisor
+claude plugin marketplace add jrajasekera/fable-advisor
 claude plugin install fable-advisor@fable-advisor
 ```
 
@@ -40,9 +39,8 @@ Then start your session as the architect:
 
 - **Claude Code ≥ 2.1.170** with a subscription that includes Fable 5 (Pro, Max, Team, or Enterprise — all current consumer plans qualify).
 - **No Fable access** (e.g. API-key billing)? Use `/model opus` for the session and change `model: fable` → `model: opus` in the advisor file. Same pattern, model tiers shift down one.
-- **Grok lane (the default implementer):** the `grok-implementer` agent needs the [xAI Grok CLI](https://x.ai/cli) installed and authenticated (install from [x.ai/cli](https://x.ai/cli), then `grok login`). It drives **Grok 4.5** headlessly (`grok --prompt-file … -m grok-4.5`). Without it the agent reports `STATUS: unavailable` — it never silently falls back to a Claude model.
-- **Codex lane (optional):** the `codex-implementer` agent needs the [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (`npm i -g @openai/codex`, then `codex login`). It invokes **GPT-5.6 Sol** as `gpt-5.6-sol` with `model_reasoning_effort=high`. GPT-5.6 access may be limited during preview; without model access, an installed/authenticated CLI, or successful authentication, the agent reports `STATUS: unavailable` and the other lanes remain unaffected.
-- Heads-up: if a pinned Claude model isn't available on your account, Claude Code silently falls back to your session model — the pattern degrades quietly rather than erroring. If results feel unremarkable, check your plan. (This quiet fallback applies only to Claude model pins — the grok and codex lanes always fail loudly with a structured error.)
+- **Codex lane (the implementer):** the `codex-implementer` agent needs the [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (`npm i -g @openai/codex`, then `codex login`). It runs two phases: **GPT-5.6 Sol** (`gpt-5.6-sol`, `model_reasoning_effort=high`, read-only) plans, then **GPT-5.6 Terra** (`gpt-5.6-terra`, `model_reasoning_effort=medium`, workspace-write) implements by resuming Sol's thread. Without CLI access or model access, the agent reports `STATUS: unavailable` — it never silently falls back to a Claude model.
+- Heads-up: if a pinned Claude model isn't available on your account, Claude Code silently falls back to your session model — the pattern degrades quietly rather than erroring. If results feel unremarkable, check your plan. (This quiet fallback applies only to Claude model pins — the codex lane always fails loudly with a structured error.)
 
 Model resolution order in Claude Code: `CLAUDE_CODE_SUBAGENT_MODEL` env var → per-invocation `model` parameter → agent frontmatter → session model.
 
@@ -55,7 +53,7 @@ Add rate limiting to our public API. Design it, delegate the
 implementation, and verify the evidence before you call it done.
 ```
 
-The architect writes the spec, picks the lane (rate limiting touches concurrency — a good case for racing `grok-implementer` against `codex-implementer` and picking the stronger diff), reads the diff and verification evidence when the report comes back, and only then reports done.
+The architect writes the spec, delegates to `codex-implementer` (Sol plans it, Terra builds it), reads the diff and verification evidence when the report comes back, and only then reports done.
 
 To make the doctrine always-on, add one line to your project's `CLAUDE.md`:
 
@@ -93,11 +91,11 @@ touching 3+ files, consult the fable-advisor agent and act on its verdict.
 
 **Does this work on claude.ai?** No — subagent model routing is Claude Code only (CLI, desktop, VS Code, web).
 
-**Why not just run everything on Fable?** You can. It's excellent. It's also the most expensive lane per token, and most of a session's tokens are implementation mechanics that the cheap lanes handle at near-parity. Spend the premium where judgment lives.
+**Why not just run everything on Fable?** You can. It's excellent. It's also the most expensive lane per token, and most of a session's tokens are implementation mechanics that the cheap lane handles at near-parity. Spend the premium where judgment lives.
 
-**Upgrading from v2?** v3 replaced the Sonnet/Opus `implementer` agent with `grok-implementer` — Grok 4.5 via the [Grok CLI](https://x.ai/cli) is now the default typing lane. v3.1 upgrades the optional `codex-implementer` lane from GPT-5.5 to GPT-5.6 Sol at high reasoning. The `fable-advisor` agent and advisor-only mode work exactly as before. If you preferred the Claude implementer, grab [`implementer.md` from the v2.1.0 tag](https://github.com/DannyMac180/fable-advisor/blob/3c1846c/agents/implementer.md).
+**Upgrading from v3?** v4 removes the `grok-implementer` lane and makes `codex-implementer` the sole implementer, now running two phases: GPT-5.6 Sol plans at high reasoning, GPT-5.6 Terra implements at medium. The `fable-advisor` agent and advisor-only mode work exactly as before.
 
-**Why Grok and GPT-5.6 Sol lanes in a Claude plugin?** Vendor diversity. Models from one family share blind spots; an independent implementation from a different lineage catches what same-family review misses — and with Claude as the architect, *every* diff now gets cross-vendor review for free. The architect stays Claude — the lanes are producers, not judges.
+**Why a GPT lane in a Claude plugin?** Vendor diversity. Models from one family share blind spots; an independent implementation from a different lineage catches what same-family review misses — and with Claude as the architect, *every* diff gets cross-vendor review for free. The architect stays Claude — the lane is a producer, not a judge.
 
 ## Go deeper
 
