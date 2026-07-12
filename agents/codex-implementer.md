@@ -73,11 +73,20 @@ SPEC_EOF
 Run Sol, capturing both the plan text and the thread id:
 
 ```bash
-# Portable timeout: macOS has no `timeout` unless coreutils is installed
-T=$(command -v gtimeout || command -v timeout || true)
-[ -z "$T" ] && echo "WARN: no timeout binary — codex runs uncapped (brew install coreutils to cap)"
+# Portable 10-minute cap per phase. Works in bash and zsh.
+# (zsh does not word-split unquoted expansions, so `${T:+$T 600} codex …` breaks there.)
+codex_capped() {
+  local TB
+  TB=$(command -v gtimeout || command -v timeout || true)
+  if [ -n "$TB" ]; then
+    "$TB" 600 codex "$@"
+  else
+    echo "WARN: no timeout binary — codex runs uncapped (brew install coreutils to cap)" >&2
+    codex "$@"
+  fi
+}
 
-${T:+$T 600} codex exec \
+codex_capped exec \
   --model gpt-5.6-sol \
   -c model_reasoning_effort=high \
   --sandbox read-only \
@@ -117,7 +126,7 @@ On `SPEC-OK`, continue to phase 2.
 Terra resumes Sol's thread, inheriting the plan:
 
 ```bash
-${T:+$T 600} codex exec resume "$TID" \
+codex_capped exec resume "$TID" \
   --model gpt-5.6-terra \
   -c model_reasoning_effort=medium \
   -c sandbox_mode=workspace-write \
@@ -145,7 +154,7 @@ BRIEF=$(mktemp -t codex-brief.XXXXXX)
   cat "$PLAN"
 } > "$BRIEF"
 
-${T:+$T 600} codex exec \
+codex_capped exec \
   --model gpt-5.6-terra \
   -c model_reasoning_effort=medium \
   --sandbox workspace-write \
@@ -169,7 +178,7 @@ You **must** say so in the report's `MODELS:` line when this fallback fires. Nev
 | `--skip-git-repo-check` | Works outside git repos. |
 | `--cd "$(pwd)"` (phase 1 / fallback only) | Deterministic working root. `resume` has no `--cd`; it inherits the shell's cwd. |
 | `- < spec file` | Prompt via stdin. No quoting hazards, no truncated specs. |
-| `${T:+$T 600}` | Ten-minute wall clock per phase when `timeout`/`gtimeout` exists (macOS needs `brew install coreutils`); uncapped otherwise. On timeout, report `STATUS: timeout` with whatever landed. |
+| `codex_capped` (wraps `codex`) | Ten-minute wall clock per phase when `timeout`/`gtimeout` exists (macOS needs `brew install coreutils`); uncapped otherwise. Defined once as a shell function because the bash-only `${T:+$T 600} codex …` idiom relies on unquoted word-splitting that zsh does not perform — it breaks (exec of a single bogus path) under zsh. On timeout, report `STATUS: timeout` with whatever landed. |
 
 The model slugs are documented defaults, not constants — if the caller's spec names different codex models for either phase, use those instead and say so in `MODELS:`.
 
