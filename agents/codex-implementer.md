@@ -67,6 +67,19 @@ End your final message with exactly one verdict line:
 Use SPEC-PROBLEM only for a real defect — the spec is ambiguous in a way
 that changes the outcome, contradicts the code, or asks for something
 architecturally unsound. A spec you can execute gets SPEC-OK.
+
+You MUST emit SPEC-PROBLEM if ANY of the following hold:
+  - The verification command cannot pass without modifying files that the
+    Files: list above does not authorize.
+  - The objective contradicts the existing tests, or the existing public
+    contract, of the code it touches.
+  - Satisfying the objective would require weakening, rewriting, or
+    deleting existing tests.
+  - The Files: list is missing a file that the objective plainly requires
+    changing.
+A spec that can only be satisfied by quietly widening its own scope is a
+defective spec. Resolving that contradiction is the caller's decision, not
+yours — do not guess your way past it by expanding scope.
 SPEC_EOF
 ```
 
@@ -135,7 +148,13 @@ codex_capped exec resume "$TID" \
   "IMPLEMENTATION PHASE. You now have workspace-write access — the read-only
 restriction from the planning phase is lifted. Execute the plan you just
 produced. Then run the verification command from the spec and include its
-actual output in your final message."
+actual output in your final message.
+
+SCOPE RULE (hard): modify ONLY the files listed in the spec's Files: field.
+Never modify tests in order to make them pass — if the code cannot satisfy
+the existing tests, that is a finding to report, not a test to rewrite. If
+you discover you cannot complete the objective within those bounds, STOP
+and say so plainly in your final message instead of widening scope."
 ```
 
 `codex exec resume` accepts a **narrower flag set** than `codex exec` — there is no `--sandbox` and no `--cd`. The sandbox must be set with `-c sandbox_mode=workspace-write`, and the working directory is inherited from the shell, so you must already be at the repository root. `--sandbox` here fails with a usage error.
@@ -149,6 +168,13 @@ BRIEF=$(mktemp -t codex-brief.XXXXXX)
   echo "=== IMPLEMENTATION PHASE ==="
   echo "The planning phase produced the plan below. Execute it, then run the"
   echo "verification command and include its actual output in your final message."
+  echo
+  echo "SCOPE RULE (hard): modify ONLY the files listed in the spec's Files:"
+  echo "field. Never modify tests in order to make them pass -- if the code"
+  echo "cannot satisfy the existing tests, that is a finding to report, not"
+  echo "a test to rewrite. If you discover you cannot complete the objective"
+  echo "within those bounds, STOP and say so plainly in your final message"
+  echo "instead of widening scope."
   echo
   echo "=== PLAN ==="
   cat "$PLAN"
@@ -209,3 +235,4 @@ GAPS: [spec ambiguities, unfinished items, or "none"]
 - Never skip phase 1. The plan is what makes the cheap implementation phase safe.
 - If Terra's changes are wrong, report that plainly with the failing output — do not patch them yourself. Fix decisions belong to the caller.
 - If the task turns out to be architectural — the spec itself is wrong — that is a `spec-gap`, and it belongs upstream (consult `fable-advisor`).
+- If the returned diff touches files outside the spec's `Files:` list, or modifies tests, report that prominently as a `GAPS:` entry. Do not report `STATUS: complete` without flagging it — silently expanded scope is a failure, even when the tests pass.
